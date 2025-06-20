@@ -1,0 +1,14 @@
+# python venv
+.venv_DeMemSeg
+
+# python cache files
+__pycache__
+
+# data for training
+demo_image/Project000_YSIY884/CPsegm_PSM
+demo_image/Project001_YSIY1448/CPsegm_PSM
+demo_image/DataSet
+demo_image/Results_Train
+
+# mmdetection github repo
+mmdetection/*
