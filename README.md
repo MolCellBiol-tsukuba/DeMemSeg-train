@@ -78,7 +78,7 @@ The primary workflow is orchestrated through a Jupyter Notebook.
 
 1.  **Prepare Input Images**:
     * Place your 2D MIP fluorescence images of yeast cells (e.g., TIFF files) into a designated input directory. For demonstration, sample images are provided in `demo_images/` (or specify actual path).
-    * The current pipeline is optimized for images with characteristics similar to those described below (see "Microscopy Image Specifications").
+    * Ensure your inputs satisfy the requirements in "Input Image Format" and, for best performance, align with the conditions in "Microscopy Image Specifications."
 
 2.  **Configure Parameters in the Main Notebook**:
     * Start a Jupyter Notebook server from within the Docker container's terminal (if not already started):
@@ -102,6 +102,13 @@ The primary workflow is orchestrated through a Jupyter Notebook.
     * Segmented images, instance masks, and associated information (e.g., JSON files with coordinates/scores) will be saved to the output directory specified in the notebook. An example output structure might be within `/workspace/output/` or a similar directory relative to the repository root (e.g., `/workspace/output/Project_Name/Experiment_Name/segmented_images/`). *Please provide a clear example or default output path structure.*
     * *(Optional, if included)* Analysis results, such as CSV files or figures, will be saved in the `figure/` or `data/output/` directory as configured in the notebook/scripts.
 
+## Input Image Format
+DeMemSeg expects single-cell crops with the following characteristics:
+- **Source**: 2D Maximum Intensity Projection (MIP) images generated from the cleared Z-stacks.
+- **Crop Size**: 200x200 pixels per yeast cell. Use the provided CellPose model or a custom CellPose model trained on your microscope data to create these crops.
+- **Bit Depth**: 8-bit images (e.g., TIFF or PNG).
+- **Context**: Original fields of view are approximately 2048x2048 pixels prior to cropping.
+
 ## Microscopy Image Specifications (Recommended for Optimal Performance)
 DeMemSeg was trained and validated on images with the following characteristics:
 - **Yeast Strain**: SK1 diploid expressing mCherry-Spo20⁵¹⁻⁹¹ (PSM marker).
@@ -109,9 +116,6 @@ DeMemSeg was trained and validated on images with the following characteristics:
 - **Objective**: 100x oil immersion (NA 1.4).
 - **Raw Acquisition**: Z-stacks (40-50 slices, 0.21 µm intervals).
 - **Preprocessing**: Computational clearing followed by Maximum Intensity Projection (MIP).
-- **Input Image Format for DeMemSeg**: 2D MIP images.
-- **Image Resolution (approx.)**: 2048x2048 pixels for the original field of view. Cropped single-cell images are 200x200 pixels.
-- **Bit Depth (input to model)**: 8-bit (e.g., scaled TIFF or PNG).
 
 ## Repository Structure
 - **`data/`**: May contain demo input images and, if analysis scripts are included, storage for input/output CSV files for morphological analysis.
@@ -131,11 +135,11 @@ DeMemSeg was trained and validated on images with the following characteristics:
 ## Citation
 If you use DeMemSeg or this repository in your research, please cite our publication:
 
-> [Shodai Taguchi, Keita Chagi, Hiroki Kawai, Kenji Irie, Yasuyuki Suda, Department of Molecular Cell Biology in University of Tsukuba and Science group in LPIXEL Inc.]. (2025). DeMemSeg: A Deep Learning Pipeline for Accurate Segmentation and Quantitative Analysis of Overlapping Prospore Membranes in 2D Projection Images. *Cell Structure and Function*, Vol(Issue), Pages. DOI: [Insert DOI when available]
+> Shodai Taguchi, Keita Chagi, Hiroki Kawai, Kenji Irie, Yasuyuki Suda, (2025) Deep learning-based segmentation of 2D projection-derived overlapping prospore membrane in yeast *Cell Structure and Function*, Vol. 50, Issue 2, Pages 183-195, DOI: [10.1247/csf.25032](https://doi.org/10.1247/csf.25032)
+
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Contact
 For questions, issues, or contributions, please open an issue on this GitHub repository or contact [taguchi.shodai.td@gmail.com](mailto:taguchi.shodai.td@gmail.com).
-
