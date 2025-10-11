@@ -1,5 +1,5 @@
 # DeMemSeg: A Deep Learning Pipeline for Yeast Prospore Membrane Segmentation and Analysis
-![DeMemSeg Logo](src/GraphicalAbst.png)
+![DeMemSeg Logo](src/Graphical%20Overview.png)
 
 ## Overview
 This repository provides a comprehensive pipeline, DeMemSeg, designed for the quantitative analysis of prospore membranes (PSMs) in sporulating yeast cells. The tools and scripts included facilitate:
