@@ -30,9 +30,8 @@ path_to_outdir = os.path.join(path_to_indir, path_CPout)
 if not os.path.exists(path_to_outdir):
     os.makedirs(path_to_outdir)
 
-
 def crop_roi(path_img, path_mask, path_outdir, size=100, AllinOne=False):
-    #画像の読み込み
+    # Load the source image and the mask produced by Cellpose
     cv2_img = cv2.imread(path_img)
     cv2_mask = path_mask
     lower_limit = 1
@@ -50,13 +49,14 @@ def crop_roi(path_img, path_mask, path_outdir, size=100, AllinOne=False):
     print("===", path_img, "===")
     
     for threshold in tqdm(range(lower_limit, upper_limit)):
+        # Each threshold corresponds to a unique label within the segmentation mask
         mask = cv2.inRange(cv2_mask, threshold, threshold)
         if mask.sum() == 0:
             continue
         else:
             binary_image = mask.astype(np.uint8)
             
-            # マスク画像の輪郭を修正
+            # Optionally refine the mask contour
             # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
             # dilated_image = cv2.dilate(binary_image, kernel, iterations=1)
             # closed_image = cv2.morphologyEx(dilated_image, cv2.MORPH_CLOSE, kernel)
@@ -66,12 +66,11 @@ def crop_roi(path_img, path_mask, path_outdir, size=100, AllinOne=False):
             contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
             for index, contour in enumerate(contours):
-                # # ROIを作成
+                # # Create ROI
                 # x, y, w, h = cv2.boundingRect(contour)
                 # roi = cv2_img[y:y+h, x:x+w]
 
-                # ROIの重心を計算
-                # 輪郭が存在するか確認
+                # Compute the centroid of the ROI and skip empty contours
                 M = cv2.moments(contour)
                 if M['m00'] == 0:
                     continue    
@@ -79,16 +78,16 @@ def crop_roi(path_img, path_mask, path_outdir, size=100, AllinOne=False):
                     cx = int(M['m10'] / M['m00'])
                     cy = int(M['m01'] / M['m00'])
 
-                # 重心から+/- 100 ピクセルの正方形領域を切り抜く
+                # Crop a square region centered on the centroid
                 size = size
                 height, width, _ = cv2_img_extract.shape
                 
-                # CellPoseでsegmentした領域でcropした画像を保存する
+                # Save the crop using the Cellpose segmentation as a mask
                 crop_region_extract = cv2_img_extract[max(0, cy-size):min(cy+size, height), max(0, cx-size):min(cx+size, width)]
                 basename_img = os.path.basename(path_img).split(".")[0]
                 output_path = "crop_"+ str(basename_img) +"_"+ str(threshold) +"_"+ str(index) + "_crop_region_extract.png"
                 cv2.imwrite(os.path.join(path_outdir_extract, output_path), crop_region_extract)
-                # 一つのフォルダにまとめたければ
+                # Optionally consolidate crops into a single folder
                 if AllinOne:
                     name_ch = basename_img.split("_")[-1]
                     name_dir = "All_extract_" + name_ch
@@ -98,13 +97,13 @@ def crop_roi(path_img, path_mask, path_outdir, size=100, AllinOne=False):
                     
                     cv2.imwrite(os.path.join(path_sum_outdir, output_path), crop_region_extract)
                 
-                # gray scaleの画像も保存する
+                # Save the grayscale version of the masked crop
                 cv2_img_gray_extract = cv2.cvtColor(cv2_img_extract, cv2.COLOR_BGR2GRAY)
                 crop_region_gray = cv2_img_gray_extract[max(0, cy-size):min(cy+size, height), max(0, cx-size):min(cx+size, width)]
                 output_path_gray = "crop_"+ str(basename_img) +"_"+ str(threshold) +"_"+ str(index) + "_crop_region_gray.png"
                 cv2.imwrite(os.path.join(path_outdir_gray, output_path_gray), crop_region_gray)
                 
-                # cropした画像を保存する
+                # Save the crop from the original image
                 crop_region = cv2_img[max(0, cy-size):min(cy+size, height), max(0, cx-size):min(cx+size, width)]
                 output_path = "crop_"+ str(basename_img) +"_"+ str(threshold) +"_"+ str(index) + "_crop_region.png"
                 cv2.imwrite(os.path.join(path_outdir_crop, output_path), crop_region)
@@ -113,10 +112,10 @@ def crop_roi(path_img, path_mask, path_outdir, size=100, AllinOne=False):
 
 def pred_result(path_to_indir, prefix="Series*_Processed001_ch00.tif", bf_or_fluo="FLUO"):
     if bf_or_fluo == "BF":
-        # 以下のモデルはＢＦ画像で細胞をセグメンテーションするためのモデル
+        # Model trained for segmenting bright-field images
         model_path = "../model/CP_20250109_172215_BrightField_LearningRate01_WeightDecay00001_Nepoch10000"
     elif bf_or_fluo == "FLUO":
-        # 以下のモデルはＰＳＭの蛍光画像で細胞をセグメンテーションするためのモデル
+        # Model trained for segmenting PSM fluorescence images
         model_path = "../model/CP_20241010_162052_mCh20_LearningRate01_WeightDecay00001_Nepoch10000"
     else:
         print("Please select BF or FLUO")
@@ -195,38 +194,38 @@ list_of_ch02 = get_path_list_from_in(ch02)
 
 
 for index, i_mask in enumerate(list_of_masks):
-    # cv2を使ってマスク画像を読み込む
+    # Load the mask image with cv2
     mask_array = cv2.imread(i_mask, cv2.IMREAD_UNCHANGED)
     
-    # まずはbfの画像からROIを切り抜く
+    # Crop ROIs from the bright-field images first
     if len(list_of_bfs) != 0:
         path_img = list_of_bfs[index]
         name_outdir = os.path.basename(path_img).split(".")[0]
         path_outdir = os.path.join(path_to_outdir, "crop_" + name_outdir)    
         crop_roi(path_img, mask_array, path_outdir, size=crop_size, AllinOne=BF_AllinOne)
     
-    # mergeの画像からROIを切り抜く
+    # Crop ROIs from the merged image
     if len(list_of_merges) != 0:
         path_img = list_of_merges[index]
         name_outdir = os.path.basename(path_img).split(".")[0]
         path_outdir = os.path.join(path_to_outdir, "crop_" + name_outdir)
         crop_roi(path_img, mask_array, path_outdir, size=crop_size, AllinOne=Merge_AllinOne)
 
-    # ch00の画像からROIを切り抜く
+    # Crop ROIs from channel 00
     if len(list_of_ch00) != 0:
         path_img = list_of_ch00[index]
         name_outdir = os.path.basename(path_img).split(".")[0]
         path_outdir = os.path.join(path_to_outdir, "crop_" + name_outdir)
         crop_roi(path_img, mask_array, path_outdir, size=crop_size, AllinOne=Ch00_AllinOne)
     
-    # ch01の画像からROIを切り抜く
+    # Crop ROIs from channel 01
     if len(list_of_ch01) != 0:        
         path_img = list_of_ch01[index]
         name_outdir = os.path.basename(path_img).split(".")[0]
         path_outdir = os.path.join(path_to_outdir, "crop_" + name_outdir)
         crop_roi(path_img, mask_array, path_outdir, size=crop_size, AllinOne=Ch01_AllinOne)
 
-    # ch02の画像からROIを切り抜く
+    # Crop ROIs from channel 02
     if len(list_of_ch02) != 0:        
         path_img = list_of_ch02[index]
         name_outdir = os.path.basename(path_img).split(".")[0]

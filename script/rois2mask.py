@@ -6,16 +6,16 @@ from read_roi import read_roi_zip
 from skimage.draw import polygon
 
 
-# 親ディレクトリから再帰的にファイルを探す
+# Recursively search for target files starting from the parent directory
 def find_all_file(parent_dir, sub_dir, filename):
     all_files = []
         
-    # 親ディレクトリを再帰的に歩く
+    # Walk through the directory tree
     for root, dirs, files in os.walk(parent_dir):
-        # 現在のディレクトリ内のファイルを探す
+        # Inspect directories that include the target sub-directory fragment
         if sub_dir in root:
             if filename in files:
-                # 見つかった場合、絶対パスをリストに追加
+                # Store the absolute path for any match
                 all_files.append(os.path.join(root, filename))
             else:
                 print(f"{filename} not found in {root}")
@@ -30,22 +30,22 @@ def filename_list(path_stack):
             for tag in page.tags:
                 if tag.name == "IJMetadata":
                     if "Labels" in page.tags["IJMetadata"].value:
-                        # "Labels"の値を取得
+                        # Retrieve the list stored under "Labels"
                         crop_files = tag.value["Labels"]
     return crop_files
 
 def roikey_filename_dict(rois, crop_files):
-    # roisのkeyのリストを取得
+    # Collect the ROI keys
     roi_keys = list(rois.keys())
-    # 最初の-までの文字列を抜き出す
+    # Keep the prefix before the first hyphen
     roi_keys = [key.split("-")[0] for key in roi_keys]
-    # 重複を消す
+    # Remove duplicates and sort numerically
     roi_keys = list(set(roi_keys))
     roi_keys = sorted(roi_keys)
-    # roiのkeyとcrop_filesを対応させるためにdictを作成。keyはroiのkey, valueはcrop_files
+    # Build a mapping between ROI identifiers and crop file names
     # roi_dict = {key: value for key, value in zip(roi_keys, crop_files)}
     
-    # roi_keysの要素を数字に変換して、crop_filesのindexと対応させる
+    # Convert the ROI identifiers to match the index of the crop file list
     roi_dict = {}
     for index in range((len(roi_keys))): 
         int_index = int(roi_keys[index]) -1
@@ -53,14 +53,14 @@ def roikey_filename_dict(rois, crop_files):
         
     return roi_dict
 
-
+    
 def cp_image(file_path, out_path):
     out_dir = os.path.dirname(out_path)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     subprocess.run(["cp", file_path, out_path])
     
-# directoryの中を空にする
+# Remove every file and sub-directory inside the target directory
 def clean_directory(dir):
     for file in os.listdir(dir):
         file_path = os.path.join(dir, file)
@@ -74,10 +74,10 @@ def clean_directory(dir):
 def rois2mask(target_stack_path, sub_dir, stack_file):
     rois = read_roi_zip(target_stack_path)
     
-    # parent dirの取得
+    # Retrieve the parent directory
     parent_dir = os.path.dirname(os.path.dirname(target_stack_path))
     
-    # mask_imageディレクトリがなければ作成
+    # Create the mask_image directory if needed
     path_extract = os.path.join(parent_dir, "extract_image")
     # get absolute path of the extract image
     abs_path_extract = os.path.abspath(path_extract)
@@ -92,16 +92,16 @@ def rois2mask(target_stack_path, sub_dir, stack_file):
     if not os.path.exists(path_train):
         os.makedirs(path_train)      
     clean_directory(path_train)
-
+    
     path_stack = os.path.join(parent_dir, sub_dir, stack_file)
     
-    # roiをmaskとしてスライス画像のファイル名を用いて保存するために、stack画像のスライスそれぞれのファイル名を取得する。
+    # Read the slice filenames so we can reuse them when saving masks
     crop_files = filename_list(path_stack)
     
-    # crop_filesとroi_keysを対応させるためのdictを作成
+    # Build a dictionary that links ROI keys to crop filenames
     roi_dict = roikey_filename_dict(rois, crop_files)
     
-    #　roi_dictのvalueを取得し、それをファイル名としマスク画像を保存する
+    # Use the ROI metadata to set a consistent output filename
     height, width = 200, 200
     
     for key, value in rois.items():
@@ -113,7 +113,7 @@ def rois2mask(target_stack_path, sub_dir, stack_file):
         
 
 
-        # maskの保存、keyの-までを取得し、roi_dictのvalueを取得し、それをファイル名とする
+        # Save the mask with the strain and ROI identifier embedded in the filename
         key_in_roi_dict = key.split("-")[0]
         key2file = roi_dict.get(key_in_roi_dict)
         file_name = key2file.split(".png")[0]
@@ -121,7 +121,7 @@ def rois2mask(target_stack_path, sub_dir, stack_file):
         mask_path = os.path.join(path_mask, strain_name + "_" + file_name + "_RoiLabel_" + roi_label + ".png")
         tifffile.imwrite(mask_path, mask)
         
-        # train_imageのコピー
+        # Copy the corresponding crop into the training image directory
         extract_image_path = os.path.join(path_extract, key2file)
         train_path = os.path.join(path_train, strain_name + "_" + file_name + ".png") 
         cp_image(extract_image_path, train_path)

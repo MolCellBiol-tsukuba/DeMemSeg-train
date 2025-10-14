@@ -9,7 +9,7 @@ import sys
 import numpy as np
 import os
 
-# ===== CSV読み込み関数 =====
+# ===== CSV loader =====
 def load_and_concat_csvs(path_list):
     df_list = []
     for path in path_list:
@@ -21,31 +21,31 @@ def load_and_concat_csvs(path_list):
             print(f"Error reading {path}: {e}")
     return pd.concat(df_list, ignore_index=True)
 
-# ===== 引数からファイル読み込み =====
+# ===== Read file paths from CLI arguments =====
 args = sys.argv[1:]
 if len(args) == 0:
-    raise ValueError("CSVファイルのパスを1つ以上指定してください。")
+    raise ValueError("Please provide at least one CSV file path.")
 
-# リストとして受け取り
+# Treat the incoming paths as a list
 data_paths = args
 df = load_and_concat_csvs(data_paths)
 
-# ===== WTを別ファイルから追加（任意） =====
+# ===== Optionally append WT data from a separate file =====
 wt_path = "../data/mmdet_results_PSM_exps_CorrectAnnotation_100percent_mask-rcnn_r50_fpn_2x_coco_epoch_24.csv"
 if os.path.exists(wt_path):
     df_wt = pd.read_csv(wt_path, low_memory=False)
     df_wt.columns = df_wt.columns.str.strip()
     df = pd.concat([df, df_wt], ignore_index=True)
 
-# ===== Roundness補正 =====
+# ===== Adjust roundness values =====
 df["Roundness"] = np.where(df["Roundness"] > 1, 2 - df["Roundness"], df["Roundness"])
 
-# ===== 可視化対象のStrain =====
+# ===== Determine strains to visualize =====
 strain_wt = "YSIY874"
 strains = sorted(df["StrainName"].dropna().unique())
 strains = [s for s in strains if s != strain_wt]
 
-# ===== 図の作成関数 =====
+# ===== Plot creation helper =====
 def create_scatter_plot(sub_df, strain, color):
     return go.Scatter(
         x=sub_df["Perimeter"],
@@ -79,7 +79,7 @@ for idx, strain in enumerate(strains):
 
 fig.update_layout(height=300*rows, width=900, showlegend=False, title="Interactive WT vs Strain Comparison")
 
-# ===== Dash App構築 =====
+# ===== Build Dash app =====
 app = Dash(__name__)
 app.layout = html.Div([
     dcc.Graph(id="scatter-plot", figure=fig, clear_on_unhover=True),

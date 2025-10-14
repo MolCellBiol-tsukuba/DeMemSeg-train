@@ -96,7 +96,7 @@ def plot_each_strain_vs_wt_with_marginals(
         g.ax_joint.set_xlim(xlim)
         g.ax_joint.set_ylim(ylim)
 
-        # 💡 legend を右外に出して背景を透明に
+        # 💡 Place the legend to the right and keep the background transparent
         handles, labels = g.ax_joint.get_legend_handles_labels()
         legend = g.ax_joint.legend(
             handles=handles,
@@ -106,7 +106,7 @@ def plot_each_strain_vs_wt_with_marginals(
             frameon=True
         )
         legend.set_title("Strain")
-        legend.get_frame().set_facecolor('none')  # 背景透明
+        legend.get_frame().set_facecolor('none')  # Transparent legend background
         legend.get_frame().set_edgecolor('black')
 
         if save:

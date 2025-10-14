@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('output_dir', type=str, help='Output directory for COCO annotations.')
     return parser.parse_args()
 
-# CellPoseIDを取り出すための関数
+# Helper to extract the CellPose-derived identifier from the mask filename
 def extract_image_name(filename):
     parts = filename.split('_')
     image_name = '_'.join(parts[:-2]) if "RoiLabel" in parts[-2] else None
@@ -31,9 +31,9 @@ def create_dict_ImgMask(image_dir, mask_dir):
     for mask in mask_files:
 
         image_name = extract_image_name(mask)[0] + '.png'
-        # image_nameがimage_filesの中にあるか確認
+        # Check whether the image exists in the image directory
         if image_name in image_files:
-            # image_nameをキーにしてmaskをリストに追加
+            # Append the mask to the list keyed by the image name
             dict_ImgMask[image_name].append(mask)
             
     return dict_ImgMask

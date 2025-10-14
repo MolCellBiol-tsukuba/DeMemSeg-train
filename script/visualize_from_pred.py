@@ -8,7 +8,7 @@ from tqdm import tqdm
 import tifffile as tiff
 import seaborn as sns
 
-# Set2パレットをBGR変換しないRGBのままで定義
+# Define the Set2 palette in RGB without converting to BGR
 PALETTE = sns.color_palette("Set2", n_colors=10)
 PALETTE = [tuple(int(c * 255) for c in rgb) for rgb in PALETTE]
 
@@ -23,7 +23,7 @@ def apply_masks_and_save_all(
     min_area=0,
     max_area=float("inf")
 ):
-    # wellmask_dir が None または存在しない場合はスキップ
+    # Skip wellmask handling if the directory is missing or not provided
     use_wellmask = well_mask_dir is not None and os.path.isdir(well_mask_dir)
 
     Path(outdir_mypreds).mkdir(parents=True, exist_ok=True)
@@ -49,7 +49,7 @@ def apply_masks_and_save_all(
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         overlay = image.copy()
 
-        # wellmask 読み込み（使う場合のみ）
+        # Load the wellmask only when requested
         if use_wellmask:
             well_path = Path(well_mask_dir) / filename
             if not os.path.exists(well_path):
@@ -89,7 +89,7 @@ def apply_masks_and_save_all(
 
             mask = maskUtils.decode(rle).astype(np.uint8)
 
-            # wellmaskフィルタリング（使用時のみ）
+            # Filter instances based on the wellmask overlap, when available
             if use_wellmask:
                 intersection = np.logical_and(mask, wellmask)
                 intersection_area = np.sum(intersection)
@@ -97,7 +97,7 @@ def apply_masks_and_save_all(
                 if mask_area == 0 or (intersection_area / mask_area) < 0.1:
                     continue
 
-            # 描画
+            # Render the overlay for the current mask
             filtered_bboxes.append(bbox)
             filtered_scores.append(score)
             filtered_masks.append(rle)
@@ -130,7 +130,7 @@ def apply_masks_and_save_all(
     print(f"✅ All filtered JSONs saved to: {outdir_mypreds}")
 
 
-# 実行例（必要に応じてパスを変更）
+# Example usage (adjust the paths as needed)
 if __name__ == "__main__":
     image_dir = "path/to/image_dir"
     json_dir = "path/to/json_dir"
